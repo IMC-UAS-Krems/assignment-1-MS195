@@ -9,10 +9,13 @@ Classes to implement:
 """
 from pygments.lexers import q
 
+from streaming.playlists import CollaborativePlaylist
 from streaming.users import FamilyMember
 from streaming.users import PremiumUser
 from datetime import datetime, timedelta
 from streaming.tracks import Song
+
+
 class StreamingPlatform:
     def __init__(self, name):
         self.name = name
@@ -87,9 +90,9 @@ class StreamingPlatform:
                 tracks_ids_unique = set()
                 for session in self.sessions:
                     if session.user == user  and session.timestamp >= start:
-                        tracks_ids_unique.add(session.track_id)
+                        tracks_ids_unique.add(session.track.track_id)
 
-                    total_unique_tracks += len(tracks_ids_unique)
+                total_unique_tracks += len(tracks_ids_unique)
 
 
         if nr_premium_users == 0:
@@ -126,6 +129,7 @@ class StreamingPlatform:
                 best_track_id = track_id
 
         return self.catalogue[best_track_id] # # return the track object, not just the id
+
 
 
 
@@ -243,4 +247,90 @@ class StreamingPlatform:
 
 
 
-    # Q8:
+    # Q8 : Collaborative Playlists with Many Artists
+    #Method: collaborative_playlists_with_many_artists(threshold: int = 3) -> list[CollaborativePlaylist]
+    def collaborative_playlists_with_many_artists(self, threshold = 3):
+        results = []
+
+        for playlist in self.playlists.values():
+            if isinstance(playlist, CollaborativePlaylist): # check only CollaborativePlaylist for instances
+                distinct_artists = set() # collect distinct artists from Song tracks only
+
+                for track in playlist.tracks:
+                    if isinstance(track, Song):# counts only Song tracks (not Podcast or AudiobookTrack)
+                        distinct_artists.add(track.artist.artist_id)
+
+                if len(distinct_artists) > threshold: # if more than threshold distinct artists then add to results
+                    results.append(playlist)
+        return results
+
+
+
+    # Q9 : Average Tracks per Playlist Type
+    #Method: avg_tracks_per_playlist_type() -> dict[str, float]
+    def avg_tracks_per_playlist_type(self):
+        playlist_tracks = 0 # total track
+        playlist_count = 0 # total counts
+
+        collaborative_tracks = 0
+        collaborative_count = 0
+
+        for playlist in self.playlists.values():
+            if isinstance(playlist, CollaborativePlaylist):
+
+                collaborative_tracks += len(playlist.tracks) #this is a CollaborativePlaylist
+                collaborative_count += 1
+            else:
+                playlist_tracks += len(playlist.tracks) #this is standard Playlist
+                playlist_count += 1
+
+        if playlist_count == 0:  # calculates the average then return 0.0 if no instances
+            playlist_average = 0.0
+        else:
+            playlist_average = playlist_tracks / playlist_count
+
+        if collaborative_count == 0:
+            collaborative_average = 0.0
+        else:
+            collaborative_average = collaborative_tracks / collaborative_count
+
+        return {
+            "Playlist": float(playlist_average),
+            "CollaborativePlaylist": float(collaborative_average)
+        }
+
+
+
+
+    #Q10 : Users Who Completed Albums
+    #Method: users_who_completed_albums() -> list[tuple[User, list[str]]]
+    def users_who_completed_albums(self):
+        results = []
+
+
+        for user in self.users.values(): # go through users in registration order
+
+            # then we collect all track_ids of this user that listened
+            listened_track_ids = set()
+            for session in self.sessions:
+                if session.user.user_id == user.user_id:
+                    listened_track_ids.add(session.track.track_id)
+
+            completed_albums = [] # checking each album
+            for album in self.albums.values():
+                if len(album.tracks) == 0: # ignore the albums with no tracks
+                    continue
+
+                all_tracks_listened = True # check if the user listened to every track in this album
+                for track in album.tracks:
+                    if track.track_id not in listened_track_ids:
+                        all_tracks_listened = False
+                        break
+
+                if all_tracks_listened: # if user completed the album then add the title
+                    completed_albums.append(album.title)
+
+            if len(completed_albums) > 0: # if user completed at least one album then add to results
+                results.append((user, completed_albums))
+
+        return results
