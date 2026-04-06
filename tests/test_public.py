@@ -151,7 +151,8 @@ class TestAvgSessionDurationByType:
 
 class TestUnderageSubUserListening:
     """Test the total_listening_time_underage_sub_users_minutes(age_threshold) method.
-    
+
+
     This method should:
     - Count only sessions for FamilyMember users under the age threshold
     - Convert to minutes
