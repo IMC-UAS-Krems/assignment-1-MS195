@@ -229,7 +229,7 @@ class StreamingPlatform:
         if len(genre_seconds) == 0: # if the user has no sessions then it returns None
             return None
 
-        t_genre = None # we find the genre with the most listening time
+        top_genre = None # we find the genre with the most listening time
         max_seconds = 0
 
         for genre in genre_seconds:
