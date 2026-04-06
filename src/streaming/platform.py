@@ -7,7 +7,6 @@ and provides query methods for analytics.
 Classes to implement:
   - StreamingPlatform
 """
-from pygments.lexers import q
 
 from streaming.playlists import CollaborativePlaylist
 from streaming.users import FamilyMember
